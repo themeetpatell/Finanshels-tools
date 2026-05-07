@@ -1,6 +1,9 @@
 export const site = {
   name: "Finance Navigator",
   company: "Finanshels",
+  /** Dubai contact — header & footer */
+  phoneDisplay: "+971 4 545 7841",
+  phoneTel: "+97145457841",
   tagline:
     "UAE-focused finance clarity for founders, CFOs, and operators — assessment-led tools with actionable outputs.",
   url:

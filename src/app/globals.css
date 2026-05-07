@@ -155,3 +155,24 @@
     @apply font-sans;
   }
 }
+
+/**
+ * Marketing shell — depth without clutter (launch polish)
+ */
+.fn-marketing-shell {
+  background-color: var(--cream);
+  background-image:
+    radial-gradient(ellipse 140% 90% at 50% -30%, rgba(241, 102, 17, 0.11), transparent 58%),
+    radial-gradient(ellipse 70% 55% at 100% 20%, rgba(8, 32, 50, 0.06), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(241, 102, 17, 0.05), transparent 50%);
+}
+
+/** Footer main zone — lifts off page cream */
+.fn-footer-main {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    var(--cream) 42%,
+    color-mix(in oklab, var(--cream) 94%, white) 100%
+  );
+}

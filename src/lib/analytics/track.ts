@@ -2,7 +2,9 @@ export type AnalyticsEventName =
   | "assessment_started"
   | "assessment_completed"
   | "tool_started"
+  | "tool_gate_completed"
   | "tool_completed"
+  | "lead_identification_submitted"
   | "lead_capture_submitted"
   | "whatsapp_cta_clicked"
   | "consultation_cta_clicked";

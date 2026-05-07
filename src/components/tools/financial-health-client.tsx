@@ -33,7 +33,10 @@ import { computeFinancialHealth, type FinancialHealthInputs } from "@/lib/scorin
 import { getFirstErrorMessage } from "@/lib/forms/first-error";
 import { formatAed } from "@/lib/format/currency";
 import { getNextRecommendedTools } from "@/lib/tools/recommendations";
+import { toolFunnelContext } from "@/lib/tools/canonical-sequence";
+import { toolSessionRequestBody } from "@/lib/tools/tool-session-request";
 import { trackEvent } from "@/lib/analytics/track";
+import { markToolCompleted } from "@/lib/toolkit-progress";
 import { useAnonymousToken } from "@/hooks/use-anonymous-id";
 
 const schema = z.object({
@@ -50,6 +53,7 @@ const schema = z.object({
 });
 
 const TOOL_SLUG = "financial-health-checkup";
+const funnel = toolFunnelContext(TOOL_SLUG);
 
 export function FinancialHealthClient() {
   const token = useAnonymousToken();
@@ -75,24 +79,20 @@ export function FinancialHealthClient() {
   });
 
   useEffect(() => {
-    trackEvent("tool_started", { toolSlug: TOOL_SLUG });
+    trackEvent("tool_started", { toolSlug: TOOL_SLUG, ...funnel });
   }, []);
 
   const result = submitted ? computeFinancialHealth(form.getValues() as FinancialHealthInputs) : null;
 
   async function onSubmit(vals: z.infer<typeof schema>) {
     const computed = computeFinancialHealth(vals as FinancialHealthInputs);
-    trackEvent("tool_completed", { toolSlug: TOOL_SLUG, healthScore: computed.healthScore });
+    trackEvent("tool_completed", { toolSlug: TOOL_SLUG, healthScore: computed.healthScore, ...funnel });
+    markToolCompleted(TOOL_SLUG);
     setSubmitted(true);
     fetch("/api/tool-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        toolSlug: TOOL_SLUG,
-        anonymousToken: token ?? undefined,
-        inputs: vals,
-        outputs: computed,
-      }),
+      body: JSON.stringify(toolSessionRequestBody(TOOL_SLUG, token, vals, computed)),
     }).catch(() => undefined);
   }
 

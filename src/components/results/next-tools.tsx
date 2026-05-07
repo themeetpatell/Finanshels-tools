@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { funnelPhaseMetaForSlug } from "@/lib/tools/canonical-sequence";
 import type { ToolDefinition } from "@/lib/tools/registry";
 
 export function NextTools({ tools }: { tools: ToolDefinition[] }) {
@@ -24,7 +26,12 @@ export function NextTools({ tools }: { tools: ToolDefinition[] }) {
       {tools.map((t) => (
         <Card key={t.slug} className="shadow-sm">
           <CardHeader className="gap-2 pb-2">
-            <CardTitle className="text-base">{t.title}</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-base">{t.title}</CardTitle>
+              <Badge variant="outline" className="font-normal text-[10px]">
+                Part {funnelPhaseMetaForSlug(t.slug).phase}
+              </Badge>
+            </div>
             <CardDescription className="leading-relaxed">{t.purpose}</CardDescription>
           </CardHeader>
           <CardFooter className="pt-0">

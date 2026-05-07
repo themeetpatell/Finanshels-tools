@@ -56,9 +56,10 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     slug: "hiring-vs-outsourcing-benchmark",
-    title: "Hiring vs Outsourcing Benchmark",
-    purpose: "Compare in-house finance build vs outsourced packages with overhead truth-testing.",
-    etaMinutes: 7,
+    title: "UAE Finance Hiring Cost Benchmark",
+    purpose:
+      "Model full employer load (visa, statute, desk, stack, founder time) versus Finanshels remote capacity — gated, stepped, CFO-grade.",
+    etaMinutes: 8,
     trackId: "start_right",
     ogDescription:
       "Side-by-side cost model: finance hires vs outsourced finance packages for UAE businesses.",

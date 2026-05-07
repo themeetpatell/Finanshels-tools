@@ -15,7 +15,7 @@ export function StickyMobileCta({
   toolSlug?: string;
 }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur print:hidden md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur print:hidden md:hidden">
       <div className="mx-auto flex max-w-xl gap-2">
         <Button asChild className="flex-1">
           <Link

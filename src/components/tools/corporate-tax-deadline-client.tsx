@@ -33,7 +33,10 @@ import { computeCorporateTaxDeadline, type CorporateTaxEstimatorInput } from "@/
 import { getFirstErrorMessage } from "@/lib/forms/first-error";
 import { UAE_RULES } from "@/lib/config/uaeRules";
 import { getNextRecommendedTools } from "@/lib/tools/recommendations";
+import { toolFunnelContext } from "@/lib/tools/canonical-sequence";
+import { toolSessionRequestBody } from "@/lib/tools/tool-session-request";
 import { trackEvent } from "@/lib/analytics/track";
+import { markToolCompleted } from "@/lib/toolkit-progress";
 import { useAnonymousToken } from "@/hooks/use-anonymous-id";
 
 const schema = z.object({
@@ -45,6 +48,7 @@ const schema = z.object({
 });
 
 const TOOL_SLUG = "corporate-tax-deadline-checker";
+const funnel = toolFunnelContext(TOOL_SLUG);
 
 const URGENCY_BADGE: Record<string, string> = {
   past_due_estimate: "Past due estimate",
@@ -73,25 +77,21 @@ export function CorporateTaxDeadlineClient() {
   });
 
   useEffect(() => {
-    trackEvent("tool_started", { toolSlug: TOOL_SLUG });
+    trackEvent("tool_started", { toolSlug: TOOL_SLUG, ...funnel });
   }, []);
 
   const computed = submitted ? computeCorporateTaxDeadline(form.getValues() as CorporateTaxEstimatorInput) : null;
 
   async function onSubmit(vals: z.infer<typeof schema>) {
     const outputs = computeCorporateTaxDeadline(vals as CorporateTaxEstimatorInput);
-    trackEvent("tool_completed", { toolSlug: TOOL_SLUG, urgencyState: outputs.urgencyState });
+    trackEvent("tool_completed", { toolSlug: TOOL_SLUG, urgencyState: outputs.urgencyState, ...funnel });
+    markToolCompleted(TOOL_SLUG);
     setSubmitted(true);
 
     fetch("/api/tool-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        toolSlug: TOOL_SLUG,
-        anonymousToken: token ?? undefined,
-        inputs: vals,
-        outputs,
-      }),
+      body: JSON.stringify(toolSessionRequestBody(TOOL_SLUG, token, vals, outputs)),
     }).catch(() => undefined);
   }
 

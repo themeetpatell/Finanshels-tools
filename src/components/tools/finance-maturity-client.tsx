@@ -33,7 +33,10 @@ import { CtaRow } from "@/components/tools/cta-row";
 import { computeFinanceMaturity } from "@/lib/scoring/finance-maturity";
 import type { FinanceMaturityAnswers } from "@/lib/scoring/finance-maturity";
 import { getNextRecommendedTools } from "@/lib/tools/recommendations";
+import { toolFunnelContext } from "@/lib/tools/canonical-sequence";
+import { toolSessionRequestBody } from "@/lib/tools/tool-session-request";
 import { trackEvent } from "@/lib/analytics/track";
+import { markToolCompleted } from "@/lib/toolkit-progress";
 import { useAnonymousToken } from "@/hooks/use-anonymous-id";
 
 const optionSchema = z.coerce.number().int().min(0).max(3);
@@ -62,6 +65,7 @@ const LEVELS = [
 ] as const;
 
 const TOOL_SLUG = "finance-maturity-score";
+const funnel = toolFunnelContext(TOOL_SLUG);
 
 export function FinanceMaturityClient() {
   const token = useAnonymousToken();
@@ -87,25 +91,23 @@ export function FinanceMaturityClient() {
   });
 
   useEffect(() => {
-    trackEvent("tool_started", { toolSlug: TOOL_SLUG });
+    trackEvent("tool_started", { toolSlug: TOOL_SLUG, ...funnel });
   }, []);
 
   const result = submitted ? computeFinanceMaturity(form.getValues() as FinanceMaturityAnswers) : null;
 
   async function finalize(nextValues: MaturityFormValues) {
     const computed = computeFinanceMaturity(nextValues as FinanceMaturityAnswers);
-    trackEvent("tool_completed", { toolSlug: TOOL_SLUG, overallScore: computed.overall });
+    trackEvent("tool_completed", { toolSlug: TOOL_SLUG, overallScore: computed.overall, ...funnel });
+    markToolCompleted(TOOL_SLUG);
     setSubmitted(true);
 
     fetch("/api/tool-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        toolSlug: TOOL_SLUG,
-        anonymousToken: token ?? undefined,
-        inputs: nextValues as FinanceMaturityAnswers,
-        outputs: computed,
-      }),
+      body: JSON.stringify(
+        toolSessionRequestBody(TOOL_SLUG, token, nextValues as FinanceMaturityAnswers, computed),
+      ),
     }).catch(() => undefined);
   }
 

@@ -9,7 +9,7 @@ export function buildCrmPayload(input: {
 }) {
   return {
     event: "finance_navigator_lead",
-    version: "2026-05-07",
+    version: "2026-05-07-funnel_phases",
     createdAt: new Date().toISOString(),
     ...input,
   };

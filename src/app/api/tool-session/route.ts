@@ -9,6 +9,8 @@ const schema = z.object({
   anonymousToken: z.string().max(160).optional(),
   inputs: z.unknown(),
   outputs: z.unknown(),
+  funnelPhase: z.union([z.literal(1), z.literal(2)]).optional(),
+  funnelStageLabel: z.string().max(200).optional(),
 });
 
 export async function POST(req: Request) {
@@ -24,6 +26,8 @@ export async function POST(req: Request) {
       anonymousToken: parsed.data.anonymousToken,
       inputs: parsed.data.inputs as Json,
       outputs: parsed.data.outputs as Json,
+      funnelPhase: parsed.data.funnelPhase,
+      funnelStageLabel: parsed.data.funnelStageLabel,
     });
 
     return NextResponse.json({ ok: true, persistence: res });

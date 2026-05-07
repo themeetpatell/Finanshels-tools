@@ -15,23 +15,27 @@ const BASE_KEYWORDS = [
 export function toolPageMetadata(slug: ToolSlug): Metadata {
   const tool = TOOLS_BY_SLUG[slug];
   const path = `/tools/${slug}`;
+  const fullTitle = `${tool.title} — Free UAE Finance Calculator`;
 
   return {
-    title: tool.title,
+    title: fullTitle,
     description: tool.ogDescription,
-    keywords: [...BASE_KEYWORDS, tool.title, tool.purpose.slice(0, 80)].join(", "),
+    keywords: [...BASE_KEYWORDS, tool.title, tool.slug.replaceAll("-", " ")].join(", "),
     openGraph: {
       type: "website",
       locale: "en_AE",
       siteName: `${site.name} · ${site.company}`,
       url: `${site.url}${path}`,
-      title: `${tool.title} · Finance Navigator`,
+      title: `${tool.title} · ${site.name}`,
       description: tool.ogDescription,
+      images:
+        site.ogImagePath.length > 0 ? [{ url: site.ogImagePath, width: 1200, height: 630, alt: tool.title }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${tool.title} · Finance Navigator`,
+      title: `${tool.title} · ${site.name}`,
       description: tool.ogDescription,
+      images: site.ogImagePath.length > 0 ? [site.ogImagePath] : undefined,
     },
     alternates: {
       canonical: path,

@@ -2,219 +2,111 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { HomeJourneyMap } from "@/components/marketing/home-journey-map";
+import { HomeToolkitJourney } from "@/components/marketing/home-toolkit-journey";
 
+import { getFeaturedLeadMagnetSlug, leadMagnetPromoPath } from "@/lib/config/marketing";
 import { site } from "@/lib/config/site";
-import { TRACK_LABELS, TRACK_ORDER } from "@/lib/tools/tracks";
-import { CANONICAL_TOOL_SEQUENCE } from "@/lib/tools/canonical-sequence";
+import { homeStructuredData } from "@/lib/seo/home-jsonld";
 import { TOOLS_BY_SLUG } from "@/lib/tools/registry";
-import { faqStructuredData, homeStructuredData } from "@/lib/seo/home-jsonld";
+
+const homeDesc =
+  "Free UAE Finance Navigator calculators and readiness check: finance maturity scoring, SME health pulse, AED cashflow runway, informational corporate tax dates, and hire vs outsourced finance economics.";
 
 export const metadata: Metadata = {
-  title: "Finance clarity for UAE operators",
-  description:
-    "Finance Navigator — sequential assessment and toolkit for UAE operators. Navy and orange brand system, Inter typography, one step at a time.",
+  title: "Free UAE Finance Calculators & Readiness Check",
+  description: homeDesc,
+  keywords:
+    "UAE finance tools, Dubai accounting calculator, corporate tax UAE, SME finance health, AED cashflow, finance outsourcing UAE, CFO clarity",
+  openGraph: {
+    type: "website",
+    locale: "en_AE",
+    url: site.url,
+    title: `${site.name} — ${site.company}`,
+    description: homeDesc,
+    siteName: site.name,
+    images:
+      site.ogImagePath.length > 0
+        ? [{ url: site.ogImagePath, width: 1200, height: 630, alt: site.name }]
+        : undefined,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${site.name} — Free UAE Finance Tools`,
+    description: homeDesc,
+  },
+  alternates: { canonical: "/" },
 };
 
-const faqs = [
-  {
-    question: "Is Finance Navigator tax or legal advice?",
-    answer:
-      "No — outputs are directional and educational. Material regulatory or tax conclusions require qualified UAE advisers reviewing your facts.",
-  },
-  {
-    question: "Why sequential instead of picking calculators from a grid?",
-    answer:
-      "Operators rarely have isolated problems. A fixed order (or an assessment-routed order) reduces thrash: each step feeds context into the next.",
-  },
-  {
-    question: "Can I skip a step?",
-    answer:
-      "You can, but we still present the toolkit as a sequence so teams don’t bounce randomly. Complete what matters, then move on when ready.",
-  },
-  {
-    question: "Which currencies does the tooling assume?",
-    answer:
-      "Monetary benchmarks use AED-first framing for UAE SMEs. Swap benchmark tables centrally when regional pricing updates land.",
-  },
-];
-
 export default function HomePage() {
+  const magnetSlug = getFeaturedLeadMagnetSlug();
+  const magnet = magnetSlug ? TOOLS_BY_SLUG[magnetSlug] : null;
+
   return (
-    <div className="space-y-16">
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-12 md:px-14 md:py-16 shadow-sm">
+    <div className="space-y-14 md:space-y-16">
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-navy-900/[0.07] bg-gradient-to-br from-white via-card to-orange-light/[0.35] px-4 py-12 shadow-[0_28px_70px_-40px_rgba(8,32,50,0.45)] ring-1 ring-black/[0.04] sm:px-6 sm:py-16 md:px-14 md:py-22">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-8 top-[-40%] h-80 bg-[radial-gradient(ellipse_at_top,rgba(241,102,17,0.12),transparent_55%)]"
+          className="pointer-events-none absolute inset-x-[-20%] top-[-60%] h-[120%] bg-[radial-gradient(ellipse_at_top,rgba(241,102,17,0.14),transparent_55%)]"
         />
-        <div className="relative space-y-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">Finance Navigator · {site.company}</p>
-          <h1 className="max-w-3xl text-pretty text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-            UAE finance clarity — one step at a time, not a wall of choices.
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-[-40%] right-[-15%] h-72 w-72 rounded-full bg-navy-900/[0.08] blur-3xl"
+        />
+        <div className="relative mx-auto max-w-2xl space-y-8 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-primary">{site.name}</p>
+          <h1 className="text-balance text-[1.75rem] font-semibold leading-[1.12] tracking-[-0.035em] text-foreground min-[400px]:text-[2rem] sm:text-4xl md:text-[2.85rem] md:leading-[1.1]">
+            Free UAE finance tools — calculators &amp; readiness check
           </h1>
-          <p className="max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-            Start with the <strong className="font-medium text-foreground">Assessment</strong>, then walk the{" "}
-            <strong className="font-medium text-foreground">toolkit sequence</strong> in order. Built for trust-heavy financial decisions on a warm
-            cream canvas with clear navy type and orange CTAs.
+          <p className="text-pretty text-lg leading-relaxed text-muted-foreground md:text-xl/[1.55]">
+            Maturity scoring, AED cash runway, filings timing signals, and build-vs-buy finance economics — all built for founders and CFOs operating in the UAE.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button asChild size="lg">
-              <Link href="/assessment">Step 1 · Start assessment</Link>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+            <Button asChild size="lg" className="min-h-12 min-w-[200px] shadow-lg shadow-primary/25">
+              <Link href="/assessment">Take the 2‑minute check</Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/tools">Continue · Toolkit sequence</Link>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="min-h-12 min-w-[200px] border-navy-900/14 bg-white/75 backdrop-blur-sm"
+            >
+              <Link href="/tools">Browse all calculators</Link>
             </Button>
           </div>
-          <Separator className="my-10" />
-          <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">How the funnel works</h2>
-              <ol className="mt-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
-                <li>
-                  <span className="font-semibold text-primary">1.</span> Answer a short routing assessment (business model, compliance posture, urgency).
-                </li>
-                <li>
-                  <span className="font-semibold text-primary">2.</span> Open the first recommended tool — complete it before moving on.
-                </li>
-                <li>
-                  <span className="font-semibold text-primary">3.</span> Follow the toolkit sequence (or your personalized top three from the assessment).
-                </li>
-                <li>
-                  <span className="font-semibold text-primary">4.</span> Export, share, or escalate to Finanshels on WhatsApp / book a review.
-                </li>
-              </ol>
+        </div>
+      </section>
+
+      <HomeJourneyMap />
+
+      <HomeToolkitJourney />
+
+      {magnet ? (
+        <section
+          className="rounded-[1.75rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-orange-light/30 px-4 py-8 shadow-[0_20px_50px_-32px_rgba(241,102,17,0.25)] ring-1 ring-primary/10 sm:px-6 sm:py-10 md:px-10 md:py-12"
+          aria-labelledby="featured-tool-heading"
+        >
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-xl space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Featured this month</p>
+              <h2 id="featured-tool-heading" className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                {magnet.title}
+              </h2>
+              <p className="text-muted-foreground leading-relaxed">{magnet.purpose}</p>
             </div>
-            <Card className="border-primary/25 bg-orange-light/60">
-              <CardHeader>
-                <CardTitle className="text-lg">Operational promise</CardTitle>
-                <CardDescription>Sequential by design — CFOs can screenshot results and hand them to auditors or banks without reformatting.</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                AED-native benchmarks and UAE rule constants live in config modules so advisers can update inputs without redeploying UX shells.
-              </CardContent>
-            </Card>
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row md:flex-col">
+              <Button asChild size="lg">
+                <Link href={leadMagnetPromoPath(magnetSlug!)}>Try this calculator</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/tools">Full toolkit order</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section className="space-y-8">
-        <div className="space-y-2">
-          <h2 className="text-3xl font-semibold tracking-tight">The standard sequence (5 steps)</h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            This is the default order on the Toolkit page. Your assessment may reorder emphasis, but you still move through tools deliberately — not all at once.
-          </p>
-        </div>
-        <ol className="space-y-0">
-          {CANONICAL_TOOL_SEQUENCE.map((slug, index) => {
-            const tool = TOOLS_BY_SLUG[slug];
-            return (
-              <li
-                key={slug}
-                className="flex gap-4 border-b border-border py-5 first:pt-0 last:border-b-0"
-              >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
-                  aria-hidden
-                >
-                  {index + 1}
-                </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{TRACK_LABELS[tool.trackId].title}</p>
-                  <h3 className="text-lg font-semibold text-foreground">{tool.title}</h3>
-                  <p className="text-sm text-muted-foreground">{tool.purpose}</p>
-                  <p className="text-xs text-muted-foreground">~{tool.etaMinutes} min</p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link href="/tools">Open toolkit sequence</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/assessment">Get a personalized order</Link>
-          </Button>
-        </div>
-      </section>
-
-      <section className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-3xl font-semibold tracking-tight">Four phases (what the sequence covers)</h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            Tracks describe the type of work — not separate menus. You still experience them in flow through the toolkit, not as four equal “choose your adventure” cards.
-          </p>
-        </div>
-        <ol className="relative ms-3 space-y-8 border-s-2 border-primary/25 ps-10">
-          {TRACK_ORDER.map((track, i) => (
-            <li key={track} className="relative">
-              <span
-                className="absolute -start-[29px] flex h-7 w-7 items-center justify-center rounded-full bg-navy-900 text-xs font-bold text-white"
-                aria-hidden
-              >
-                {i + 1}
-              </span>
-              <h3 className="text-lg font-semibold text-foreground">{TRACK_LABELS[track].title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{TRACK_LABELS[track].subtitle}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Trusted Finanshels execution spine</CardTitle>
-            <CardDescription>Navigator is calibrated for Gulf-grade operators and governance-minded founders.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-relaxed text-muted-foreground">
-            <p>Compliance estimators isolate legal drift from UX — escalate when timelines become existential.</p>
-            <p>Lead capture payloads mirror CRM schemas so outbound teams don’t reshape context by hand.</p>
-          </CardContent>
-          <CardFooter>
-            <Button asChild variant="outline">
-              <Link href="/how-it-works">How results work</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-        <Card className="border-dashed border-primary/20 bg-peach-muted/25 shadow-sm">
-          <CardHeader>
-            <CardTitle>After each step</CardTitle>
-            <CardDescription>You always get interpretation, next-step tooling, and escalation — not a dead end.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <ol className="list-decimal space-y-2 ps-5">
-              <li>Scores and plain-language risks.</li>
-              <li>What to run next (sequenced).</li>
-              <li>Optional lead capture & expert handoff.</li>
-            </ol>
-          </CardContent>
-          <CardFooter>
-            <Button asChild variant="outline">
-              <Link href="/assessment">Start the path</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </section>
-
-      <section className="space-y-5">
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight">FAQ</h2>
-          <p className="text-sm text-muted-foreground">High-signal answers for finance leaders evaluating digital entry points.</p>
-        </div>
-        <div className="space-y-4">
-          {faqs.map((faq) => (
-            <details key={faq.question} className="rounded-xl border border-border bg-card px-4 py-3">
-              <summary className="cursor-pointer text-sm font-semibold text-foreground">{faq.question}</summary>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{faq.answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData()) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData(faqs)) }} />
     </div>
   );
 }

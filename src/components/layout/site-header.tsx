@@ -1,59 +1,53 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { HeaderProfile } from "@/components/layout/header-profile";
 import { site } from "@/lib/config/site";
 
-const nav = [
-  { href: "/", label: "Home" },
-  { href: "/assessment", label: "Assessment" },
-  { href: "/tools", label: "Toolkit" },
-  { href: "/how-it-works", label: "How it works" },
-];
-
 export function SiteHeader() {
+  const pathname = usePathname() ?? "";
+  const onAssessment = pathname === "/assessment" || pathname.startsWith("/assessment/");
+
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-navy-900 text-white print:hidden">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold tracking-tight text-white">{site.name}</span>
-          <span className="hidden text-xs text-white/65 sm:inline">by {site.company}</span>
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#061520]/92 pt-[env(safe-area-inset-top)] text-white shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-md print:hidden">
+      <div className="mx-auto flex min-h-[3.5rem] w-full max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:min-h-[3.75rem] sm:gap-4 sm:px-4 sm:py-0">
+        <Link
+          href="/"
+          className="min-w-0 max-w-[calc(100%-10.25rem)] truncate text-left text-[0.8125rem] font-semibold tracking-[-0.02em] text-white transition hover:text-white/90 sm:max-w-[min(62vw,15rem)] sm:text-[0.95rem] md:max-w-none md:overflow-visible md:whitespace-normal"
+        >
+          {site.name}
         </Link>
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-2 text-sm text-white/85 transition hover:bg-white/10 hover:text-white"
+
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <HeaderProfile />
+
+          {onAssessment ? (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="shrink-0 border-white/30 bg-transparent px-2.5 text-white hover:bg-white/10 hover:text-white sm:px-2.5"
             >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center gap-2">
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="hidden border-white/35 bg-transparent text-white hover:bg-white/10 hover:text-white sm:inline-flex"
-          >
-            <Link href="/tools">Toolkit sequence</Link>
-          </Button>
-          <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-[#d95c0f]">
-            <Link href="/assessment">Start assessment</Link>
-          </Button>
-        </div>
-      </div>
-      <div className="border-t border-white/10 bg-navy-900 md:hidden">
-        <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-3 pb-2 pt-2">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-white/90"
+              <Link href="/tools">
+                <span className="sm:hidden">Toolkit</span>
+                <span className="hidden sm:inline">Open toolkit</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              size="sm"
+              className="shrink-0 bg-primary px-2.5 text-primary-foreground hover:bg-[#d95c0f] sm:px-2.5"
             >
-              {item.label}
-            </Link>
-          ))}
+              <Link href="/assessment">
+                <span className="sm:hidden">Assessment</span>
+                <span className="hidden sm:inline">Start assessment</span>
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

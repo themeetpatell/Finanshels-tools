@@ -31,6 +31,21 @@ See `.env.example`.
 | `NEXT_PUBLIC_CONSULTATION_URL` | “Book review” CTA destination. |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser client when used. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side inserts from API routes. |
+| `NEXT_PUBLIC_LEAD_MAGNET_TOOL_SLUG` | Optional featured calculator on the homepage (`registry` slug). |
+
+### Lead identification (mandatory)
+
+- **Assessment, toolkit hub, and every calculator page** are wrapped in `LeadIdentifyGate` (`src/components/lead/lead-identify-gate.tsx`). Visitors submit name, work email, company, headcount band, and consent once; the profile is stored in `localStorage` (`finance-navigator_lead_identity_v2`) and posted to `/api/leads/identify` (Supabase `leads` row with `source_tool_slug` prefixed `identify:…`).
+- **Promo deep links still require identification first** (`?promo=1` runs after the gate on each tool page).
+- **Clear profile for testing:** remove the `localStorage` key above or use devtools “clear site data”.
+
+### Promoting one calculator (marketing)
+
+- **Any tool, any campaign:** send traffic to `/tools/<slug>?promo=1`. That **session** bypasses the sequential gate for that slug only (see `PromoToolCapture` + `sessionStorage` via `PROMO_UNLOCK_KEY` in `src/lib/toolkit-progress.ts`). Append your own `utm_source`, `utm_medium`, `utm_campaign` as usual.
+- **Clear bypass:** open the same URL with `?promo=0` or clear site data for this origin.
+- **Homepage hero strip:** set `NEXT_PUBLIC_LEAD_MAGNET_TOOL_SLUG` to mirror the tool you’re amplifying (must match a slug in `registry.ts`).
+
+SEO: `src/app/sitemap.ts` and `src/app/robots.ts` expose all public routes; enrich page copy in each route’s `metadata` and in `src/lib/seo/`.
 
 If Supabase env is incomplete, persistence falls back to **mock** paths while structured payloads still log to `stdout`.
 
@@ -39,7 +54,7 @@ Apply [`supabase/schema.sql`](supabase/schema.sql) when deploying persistence.
 ## Source layout
 
 ```
-src/app/(marketing)/          # Pages: home, assessment, tools, how-it-works
+src/app/(marketing)/          # Pages: home, assessment, tools
 src/components/tools/         # Tool clients, assessment, sequential toolkit UI
 src/components/forms/         # Shared form primitives (FormField, LabeledSlot)
 src/components/results/       # Charts, score highlight, print helpers
@@ -54,7 +69,7 @@ src/lib/forms/                # Shared form helpers (e.g. first field error)
 supabase/schema.sql
 ```
 
-**Toolkit order** lives in [`src/lib/tools/canonical-sequence.ts`](src/lib/tools/canonical-sequence.ts). The `/tools` page steps through that sequence in UI; registry slugs must match `src/app/(marketing)/tools/<slug>/page.tsx`.
+**Toolkit order** lives in [`src/lib/tools/canonical-sequence.ts`](src/lib/tools/canonical-sequence.ts): two **visitor-facing parts** (“Understand your position” → maturity, health, cashflow; “Plan your next moves” → tax timing, hire vs outsource). The flat `CANONICAL_TOOL_SEQUENCE` is concatenated for unlock order. `FUNNEL_PHASES[].visitor*` strings are marketing copy; `funnelLabel` / `crmStages` are **internal only** (analytics + integrators — not rendered on the site). Registry slugs must match `src/app/(marketing)/tools/<slug>/page.tsx`.
 
 Per-tool SEO is centralized in [`src/lib/seo/tool-metadata.ts`](src/lib/seo/tool-metadata.ts).
 
@@ -63,7 +78,8 @@ Per-tool SEO is centralized in [`src/lib/seo/tool-metadata.ts`](src/lib/seo/tool
 [`src/lib/analytics/track.ts`](src/lib/analytics/track.ts) — mirrors to `window.dataLayer` when present.
 
 - `assessment_started` / `assessment_completed`
-- `tool_started` / `tool_completed`
+- `tool_started` / `tool_completed` (include `funnelPhase` + `funnelStageLabel` from each tool)
+- `lead_identification_submitted` (`funnelContext`, optional `sourceToolSlug`)
 - `lead_capture_submitted`
 - `whatsapp_cta_clicked` / `consultation_cta_clicked`
 
@@ -93,7 +109,7 @@ Optional: POST `/api/tool-session` on completion for anonymous diagnostics.
 | --- | --- |
 | `POST /api/leads` | Validates lead payload + snapshots. |
 | `POST /api/assessment` | Stores assessment routing payload. |
-| `POST /api/tool-session` | Anonymous tool completion logging. |
+| `POST /api/tool-session` | Anonymous tool completion logging; accepts optional `funnelPhase` / `funnelStageLabel` stored on `tool_sessions.metadata`. |
 
 ## npm audit
 

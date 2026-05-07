@@ -31,6 +31,7 @@ import { UAE_RULES } from "@/lib/config/uaeRules";
 import { routeAssessment } from "@/lib/scoring/assessment-router";
 import type { AssessmentAnswers } from "@/lib/scoring/assessment-router";
 import { trackEvent } from "@/lib/analytics/track";
+import { readLeadIdentity } from "@/lib/lead-identity-storage";
 import { useAnonymousToken } from "@/hooks/use-anonymous-id";
 
 const uiSchema = z.object({
@@ -109,9 +110,13 @@ export function AssessmentClient() {
       const routed = routeAssessment(mapped);
       trackEvent("assessment_completed", { recommendedTrack: routed.recommendedTrack });
       setFinished(true);
+      const profile = readLeadIdentity();
       await persistAssessmentPayload({
         answers: mapped,
         outcome: routed,
+        identifiedLead: profile
+          ? { fullName: profile.fullName, workEmail: profile.workEmail, companyName: profile.companyName }
+          : undefined,
       });
     } finally {
       setRouting(false);
@@ -121,17 +126,31 @@ export function AssessmentClient() {
   const firstErr = getFirstErrorMessage(form.formState.errors);
 
   return (
-    <div className="space-y-8 pb-24 md:pb-10">
-      <header className="space-y-2">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">Finance Navigator Assessment</h1>
-        <p className="max-w-3xl text-pretty text-muted-foreground leading-relaxed">
-          Short routing pass that sequences tools for UAE finance leaders — deterministic next steps rather than noisy advice.
-        </p>
+    <div className="space-y-10 pb-24 md:pb-12">
+      <header className="relative overflow-hidden rounded-3xl border border-navy-900/[0.07] bg-gradient-to-br from-white via-card to-orange-light/[0.45] px-4 py-8 shadow-[0_24px_60px_-36px_rgba(8,32,50,0.45)] ring-1 ring-black/[0.04] sm:px-6 sm:py-10 md:px-11 md:py-12">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/15 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-32 left-10 h-56 w-56 rounded-full bg-navy-900/10 blur-3xl"
+        />
+        <div className="relative space-y-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-primary">Finance Navigator · UAE</p>
+          <h1 className="text-balance text-[1.65rem] font-semibold leading-[1.12] tracking-[-0.03em] text-foreground min-[400px]:text-3xl md:text-[2.35rem]">
+            UAE finance readiness check
+          </h1>
+          <p className="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
+            Three short steps (~2 minutes). We map mainland vs free zone, filings posture, and what matters now — then suggest which free calculators to open
+            first.
+          </p>
+        </div>
       </header>
 
       <StepProgressSection
         labelId="assessment-progress"
-        label="Navigator routing"
+        label="Progress"
         stepIndex={step}
         stepCount={3}
         submitted={finished}
@@ -139,7 +158,7 @@ export function AssessmentClient() {
 
       {!finished ? (
         <form
-          className="space-y-6"
+          className="space-y-8"
           onSubmit={form.handleSubmit(async () => {
             if (step < 2) {
               setStep((s) => ((s + 1) as 0 | 1 | 2));
@@ -149,12 +168,12 @@ export function AssessmentClient() {
           })}
         >
           {step === 0 && (
-            <Card>
+            <Card className="overflow-visible rounded-2xl border-navy-900/[0.06] shadow-[0_22px_50px_-32px_rgba(8,32,50,0.35)] ring-1 ring-black/[0.03]">
               <CardHeader>
-                <CardTitle className="text-lg">Business profile</CardTitle>
-                <CardDescription>Factors that materially change sequencing risk.</CardDescription>
+                <CardTitle className="text-xl md:text-2xl">Business profile</CardTitle>
+                <CardDescription>Tells us how you operate so suggestions stay relevant.</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
+              <CardContent className="grid min-w-0 gap-6 md:grid-cols-2 md:gap-8">
                 <SelectField label="Business type" value={form.watch("businessType")} onChange={(v) => form.setValue("businessType", v as UiFormValues["businessType"], { shouldValidate: true })}
                   options={[
                     { value: "services", label: "Services / agency" },
@@ -175,7 +194,7 @@ export function AssessmentClient() {
                 <Field label="Company age (months)">
                   <Input type="number" {...form.register("companyAgeMonths")} />
                 </Field>
-                <Field label="Annual revenue band (AED)">
+                <Field label="Annual revenue (AED band)">
                   <Select
                     value={form.watch("annualRevenueBandId")}
                     onValueChange={(v) => {
@@ -183,8 +202,11 @@ export function AssessmentClient() {
                       form.setValue("annualRevenueBandId", v, { shouldValidate: true });
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose band">
+                        {(val: unknown) =>
+                          UAE_RULES.revenueBandsAed.find((b) => b.id === val)?.label ?? "Choose band"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {UAE_RULES.revenueBandsAed.map((band) => (
@@ -203,12 +225,13 @@ export function AssessmentClient() {
           )}
 
           {step === 1 && (
-            <Card>
+            <Card className="overflow-visible rounded-2xl border-navy-900/[0.06] shadow-[0_22px_50px_-32px_rgba(8,32,50,0.35)] ring-1 ring-black/[0.03]">
               <CardHeader>
-                <CardTitle className="text-lg">Compliance posture & operating load</CardTitle>
+                <CardTitle className="text-xl md:text-2xl">Finance stack & filings</CardTitle>
+                <CardDescription>Approximate answers are fine — we’re sizing guidance, not auditing you.</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                <Field label="VAT registered?">
+              <CardContent className="grid min-w-0 gap-6 md:grid-cols-2 md:gap-8">
+                <Field label="VAT registration">
                   <Select
                     value={form.watch("vatRegistered")}
                     onValueChange={(v) => {
@@ -216,17 +239,20 @@ export function AssessmentClient() {
                       form.setValue("vatRegistered", v as UiFormValues["vatRegistered"], { shouldValidate: true });
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose one">
+                        {(val: unknown) =>
+                          val === "yes" ? "Yes, registered" : val === "no" ? "Not registered / doesn’t apply yet" : "Choose one"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="yes">Yes</SelectItem>
-                      <SelectItem value="no">No / not relevant yet</SelectItem>
+                      <SelectItem value="yes">Yes, registered</SelectItem>
+                      <SelectItem value="no">Not registered / doesn’t apply yet</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
 
-                <Field label="Corporate tax registration posture">
+                <Field label="Corporate tax (Federal Decree‑Law regime)">
                   <Select
                     value={form.watch("ctStatus")}
                     onValueChange={(v) => {
@@ -234,35 +260,45 @@ export function AssessmentClient() {
                       form.setValue("ctStatus", v as UiFormValues["ctStatus"], { shouldValidate: true });
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose one">
+                        {(val: unknown) => {
+                          const m: Record<string, string> = {
+                            registered: "Registered with the FTA",
+                            in_progress: "In progress with advisors or internal team",
+                            no: "Not started yet",
+                            unknown: "Not sure — needs clarity",
+                          };
+                          return (typeof val === "string" && m[val]) || "Choose one";
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="registered">Registered / underway confidently</SelectItem>
-                      <SelectItem value="in_progress">Structured work with advisers</SelectItem>
-                      <SelectItem value="no">Not started</SelectItem>
-                      <SelectItem value="unknown">Unknown internally</SelectItem>
+                      <SelectItem value="registered">Registered with the FTA</SelectItem>
+                      <SelectItem value="in_progress">In progress with advisors or internal team</SelectItem>
+                      <SelectItem value="no">Not started yet</SelectItem>
+                      <SelectItem value="unknown">Not sure — needs clarity</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
 
-                <SelectField label="Accounting / ERP posture" value={form.watch("accountingSoftwareStatus")} onChange={(v) =>
+                <SelectField label="Books & tools" value={form.watch("accountingSoftwareStatus")} onChange={(v) =>
                   form.setValue("accountingSoftwareStatus", v as UiFormValues["accountingSoftwareStatus"], { shouldValidate: true })}
                   options={[
-                    { value: "none", label: "Spreadsheet-first" },
-                    { value: "basic", label: "Light cloud accounting" },
-                    { value: "erp_light", label: "Defined stack, uneven governance" },
-                    { value: "erp_mature", label: "Mature ERP & controls-aware" },
+                    { value: "none", label: "Mostly spreadsheets" },
+                    { value: "basic", label: "Cloud accounting (basic use)" },
+                    { value: "erp_light", label: "Stack in place; processes still uneven" },
+                    { value: "erp_mature", label: "Mature system & controls discipline" },
                   ]}
                 />
 
-                <SelectField label="Monthly invoice throughput" value={form.watch("monthlyInvoiceVolume")} onChange={(v) =>
+                <SelectField label="Rough monthly invoice volume" value={form.watch("monthlyInvoiceVolume")} onChange={(v) =>
                   form.setValue("monthlyInvoiceVolume", v as UiFormValues["monthlyInvoiceVolume"], { shouldValidate: true })}
                   options={[
-                    { value: "under_50", label: "Under 50 invoices" },
-                    { value: "50_250", label: "50 – 250 invoices" },
-                    { value: "250_1500", label: "250 – 1500 invoices" },
-                    { value: "1500_plus", label: "1500+ invoices" },
+                    { value: "under_50", label: "Fewer than 50" },
+                    { value: "50_250", label: "50 to 250" },
+                    { value: "250_1500", label: "250 to 1,500" },
+                    { value: "1500_plus", label: "Over 1,500" },
                   ]}
                 />
               </CardContent>
@@ -270,14 +306,14 @@ export function AssessmentClient() {
           )}
 
           {step === 2 && (
-            <Card>
+            <Card className="overflow-visible rounded-2xl border-navy-900/[0.06] shadow-[0_22px_50px_-32px_rgba(8,32,50,0.35)] ring-1 ring-black/[0.03]">
               <CardHeader>
-                <CardTitle className="text-lg">Pressure points & pacing</CardTitle>
-                <CardDescription>Concern + urgency dictates how aggressively we stack tools.</CardDescription>
+                <CardTitle className="text-xl md:text-2xl">Priorities</CardTitle>
+                <CardDescription>Pick what worries you most and how soon you want to act.</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-5">
-                <div className="space-y-2">
-                  <Label>Biggest concern right now</Label>
+              <CardContent className="grid gap-6">
+                <div className="min-w-0 space-y-3">
+                  <Label className="text-base font-medium">Top concern</Label>
                   <RadioGroup
                     value={form.watch("biggestConcern")}
                     onValueChange={(v) => {
@@ -285,54 +321,60 @@ export function AssessmentClient() {
                       form.setValue("biggestConcern", v as AssessmentAnswers["biggestConcern"], { shouldValidate: true });
                     }}
                   >
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <RadioChoice value="cashflow_pressure" label="Liquidity timing & AED runway stress" />
-                      <RadioChoice value="compliance_deadlines" label="Filings, penalties, registrations" />
-                      <RadioChoice value="financial_visibility" label="Seeing true profitability & KPI signal" />
-                      <RadioChoice value="pricing_margins" label="Margins / pricing / unit economics drift" />
-                      <RadioChoice value="hiring_structure" label="Finance hiring vs outsourced model decisions" />
-                      <RadioChoice value="scaling_controls" label="Controls, governance & finance scaling" />
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <RadioChoice value="cashflow_pressure" label="Cash and runway pressure" />
+                      <RadioChoice value="compliance_deadlines" label="VAT, corporate tax & filing deadlines" />
+                      <RadioChoice value="financial_visibility" label="Real profitability & management reporting" />
+                      <RadioChoice value="pricing_margins" label="Margins, pricing & cost control" />
+                      <RadioChoice value="hiring_structure" label="Building or outsourcing the finance team" />
+                      <RadioChoice value="scaling_controls" label="Governance as the company scales" />
                     </div>
                   </RadioGroup>
                 </div>
 
-                <SelectField label="Finance team setup today" value={form.watch("financeTeamSetup")} onChange={(v) =>
+                <SelectField label="Who runs finance today?" value={form.watch("financeTeamSetup")} onChange={(v) =>
                   form.setValue("financeTeamSetup", v as UiFormValues["financeTeamSetup"], { shouldValidate: true })}
                   options={[
-                    { value: "founder_led", label: "Founder / operator bookkeeping" },
-                    { value: "single_accountant", label: "Single finance owner" },
-                    { value: "small_team", label: "2–4 hybrid finance teammates" },
-                    { value: "controller_grade", label: "Controller-grade internal squad" },
-                    { value: "fractional_external", label: "Outsourced + fractional CFO" },
+                    { value: "founder_led", label: "Founder / operator-led" },
+                    { value: "single_accountant", label: "One finance person" },
+                    { value: "small_team", label: "Small in-house team (2–4)" },
+                    { value: "controller_grade", label: "Controller-level internal team" },
+                    { value: "fractional_external", label: "Outsourced + fractional leadership" },
                   ]}
                 />
 
-                <SelectField label="Urgency window" value={form.watch("urgency")} onChange={(v) => form.setValue("urgency", v as UiFormValues["urgency"], { shouldValidate: true })}
+                <SelectField label="How soon do you want help?" value={form.watch("urgency")} onChange={(v) => form.setValue("urgency", v as UiFormValues["urgency"], { shouldValidate: true })}
                   options={[
-                    { value: "this_month", label: "This month — remediation mode" },
-                    { value: "quarter", label: "This quarter — disciplined execution window" },
-                    { value: "six_month_window", label: "~6 months — roadmap investment" },
-                    { value: "exploring", label: "Benchmarking — no imminent crisis" },
+                    { value: "this_month", label: "This month" },
+                    { value: "quarter", label: "This quarter" },
+                    { value: "six_month_window", label: "Next ~6 months" },
+                    { value: "exploring", label: "Just exploring options" },
                   ]}
                 />
               </CardContent>
             </Card>
           )}
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             {step > 0 ? (
-              <Button type="button" variant="outline" disabled={routing} onClick={() => setStep((s) => ((Math.max(s - 1, 0) as 0 | 1 | 2)))}>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 border-navy-900/15 bg-white/80"
+                disabled={routing}
+                onClick={() => setStep((s) => ((Math.max(s - 1, 0) as 0 | 1 | 2)))}
+              >
                 Back
               </Button>
             ) : (
-              <span />
+              <span className="hidden sm:block" />
             )}
-            <Button size="lg" type="submit" disabled={routing}>
-              {routing ? "Routing…" : step < 2 ? "Continue" : "Generate Navigator sequence"}
+            <Button size="lg" type="submit" disabled={routing} className="min-h-12 min-w-[200px] shadow-md shadow-primary/20 sm:ml-auto">
+              {routing ? "Saving…" : step < 2 ? "Continue" : "See suggested calculators"}
             </Button>
           </div>
 
-          <DisclaimerCard body="Routing heuristics are tuned for SMEs – large groups need bespoke structuring reviews." />
+          <DisclaimerCard compact body="Suggested order is heuristic — groups with complex structuring should confirm with advisors." />
 
           {firstErr ? (
             <p role="alert" className="text-sm text-destructive">
@@ -342,9 +384,9 @@ export function AssessmentClient() {
         </form>
       ) : outcome && answers ? (
         <div className="space-y-10">
-          <Card className="border-primary/30 bg-gradient-to-br from-card via-background to-background">
+            <Card className="rounded-2xl border-primary/25 bg-gradient-to-br from-card via-orange-light/20 to-background shadow-[0_20px_48px_-30px_rgba(241,102,17,0.35)] ring-1 ring-primary/10">
             <CardHeader className="space-y-4">
-              <CardTitle className="text-2xl">Recommended track — {TRACK_LABELS[outcome.recommendedTrack as TrackId].title}</CardTitle>
+              <CardTitle className="text-2xl">Suggested focus: {TRACK_LABELS[outcome.recommendedTrack as TrackId].title}</CardTitle>
               <CardDescription className="text-base leading-relaxed">{TRACK_LABELS[outcome.recommendedTrack as TrackId].subtitle}</CardDescription>
               <Separator />
               <p className="text-sm leading-relaxed text-muted-foreground">{outcome.maturitySnapshot}</p>
@@ -353,29 +395,35 @@ export function AssessmentClient() {
             </CardHeader>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl border-navy-900/[0.06] shadow-[0_18px_44px_-28px_rgba(8,32,50,0.3)] ring-1 ring-black/[0.03]">
             <CardHeader>
-              <CardTitle className="text-xl">Sequenced toolkit</CardTitle>
-              <CardDescription>Continue in order — each pass sharpens subsequent inputs.</CardDescription>
+              <CardTitle className="text-xl">Your suggested order</CardTitle>
+              <CardDescription>Try these calculators first — each one sets context for the next.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <ol className="list-decimal space-y-4 ps-5">
+              <ol className="list-none space-y-5">
                 {outcome.topTools.map((slug, idx) => (
-                  <li key={slug} className="space-y-1">
-                    <p className="text-sm font-semibold">
-                      {idx + 1}. {TOOLS_BY_SLUG[slug].title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{TOOLS_BY_SLUG[slug].purpose}</p>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/tools/${slug}`}>Launch tool</Link>
-                    </Button>
+                  <li key={slug} className="flex gap-4">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold tabular-nums text-primary-foreground shadow-sm shadow-primary/20"
+                      aria-hidden
+                    >
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p className="text-sm font-semibold leading-snug md:text-base">{TOOLS_BY_SLUG[slug].title}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{TOOLS_BY_SLUG[slug].purpose}</p>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/tools/${slug}`}>Launch tool</Link>
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ol>
 
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button asChild size="lg">
-                  <Link href={`/tools/${outcome.topTools[0]}`}>Continue into tool #1</Link>
+                  <Link href={`/tools/${outcome.topTools[0]}`}>Start with the first calculator</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
                   <Link href="/tools">Browse toolkit</Link>
@@ -388,13 +436,14 @@ export function AssessmentClient() {
             toolSlug="finance-navigator-assessment"
             calculatorInputs={answers}
             calculatorOutputs={outcome}
+            prefillAnnualRevenueBandId={answers.annualRevenueBandId}
             assessmentSnapshot={{
               routedTrack: outcome.recommendedTrack,
               topTools: outcome.topTools,
             }}
           />
 
-          <DisclaimerCard body="Assessment does not constitute onboarding — scope is confirmed commercially with Finanshels." />
+          <DisclaimerCard compact body="Results are for planning conversations only — engagement terms are confirmed separately with Finanshels." />
 
           <StickyMobileCta
             toolSlug="finance-navigator-assessment"
@@ -429,8 +478,8 @@ function mapUiToAssessment(ui: UiFormValues): AssessmentAnswers {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <div className="min-w-0 space-y-2">
+      <Label className="text-sm font-medium leading-snug">{label}</Label>
       {children}
     </div>
   );
@@ -447,6 +496,7 @@ function SelectField({
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
 }) {
+  const lookup = Object.fromEntries(options.map((o) => [o.value, o.label])) as Record<string, string>;
   return (
     <Field label={label}>
       <Select
@@ -456,8 +506,10 @@ function SelectField({
           onChange(v);
         }}
       >
-        <SelectTrigger>
-          <SelectValue />
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Choose one">
+            {(val: unknown) => (typeof val === "string" && lookup[val] ? lookup[val] : "Choose one")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {options.map((opt) => (
@@ -473,8 +525,11 @@ function SelectField({
 
 function RadioChoice({ value, label }: { value: AssessmentAnswers["biggestConcern"]; label: string }) {
   return (
-    <label htmlFor={`concern-${value}`} className="flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 hover:bg-accent/60">
-      <RadioGroupItem value={value} id={`concern-${value}`} />
+    <label
+      htmlFor={`concern-${value}`}
+      className="flex min-h-[3rem] cursor-pointer items-start gap-3 rounded-xl border border-border/80 bg-card/80 px-3 py-3 text-left shadow-sm transition hover:border-primary/30 hover:bg-accent/40"
+    >
+      <RadioGroupItem value={value} id={`concern-${value}`} className="mt-1" />
       <span className="text-sm leading-snug">{label}</span>
     </label>
   );

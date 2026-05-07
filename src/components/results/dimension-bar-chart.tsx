@@ -15,8 +15,12 @@ export function DimensionBarChart({
   return (
     <figure className="w-full space-y-2">
       <figcaption className="text-sm font-medium text-foreground">{title}</figcaption>
-      <div className="h-[min(320px,70vw)] w-full min-h-[240px]" role="presentation" aria-hidden>
-        <ResponsiveContainer width="100%" height="100%">
+      <div
+        className="h-[min(320px,70vw)] w-full min-h-[220px] min-w-0 overflow-x-auto sm:min-h-[240px]"
+        role="presentation"
+        aria-hidden
+      >
+        <ResponsiveContainer width="100%" height="100%" minWidth={280}>
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-12} textAnchor="end" height={68} />
